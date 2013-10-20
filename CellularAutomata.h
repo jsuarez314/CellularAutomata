@@ -73,11 +73,14 @@ class CellularAutomata{
   Int_t NBox;                                              //Number Box
   Int_t Cells;
   Int_t Lives;
+  Int_t LiveTotal;
   Int_t i,j;
   Int_t s[100][100];
+  Int_t stemp[100][100];
 
   Double_t aleator1, aleator2;
   TBox *tb[100][100]; 
+  TBox *tbtemp[100][100]; 
 
   void Init();
 

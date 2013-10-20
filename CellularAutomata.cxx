@@ -89,25 +89,81 @@ CellularAutomata::CellularAutomata(const TGWindow *p,UInt_t w,UInt_t h){
   time=0;
   i=0;
   j=0;
-  Count = new TTimer(0.1);
+  Count = new TTimer();
   Count->Connect("Timeout()","CellularAutomata",this,"Run()");
 }
 
-void CellularAutomata::Init(){
-  
+void CellularAutomata::Init(){  
+  NBox= NEPoints->GetNumber()-1;
+  Count->SetTime(100/(NBox*NBox));
+  c1->Range(0,0,NBox+1,NBox+1);
+
+  //Inicialización Pseudoaleatoria Distribución Uniforme
   Rand = new TRandom3();
   Rand->SetSeed();
-  NBox= NEPoints->GetNumber();
-  c1->Range(0,0,NBox+1,NBox+1);
   for(Int_t w=0;w<=NBox;w++){
     for(Int_t h=0;h<=NBox;h++){
       tb[w][h]= new TBox(w,h,w+1,h+1);
+      tbtemp[w][h]= new TBox(w,h,w+1,h+1);
       aleator1=Rand->Uniform(0,9);
-      if(aleator1<=8.5){s[w][h]=1; tb[w][h]->SetFillColor(0);}//Cell Live
-      else{s[w][h]=0; tb[w][h]->SetFillColor(1);}//Cell Dead
+      if(aleator1<=4){
+	s[w][h]=1; 
+	tb[w][h]->SetFillColor(0);
+	stemp[w][h]=1; 
+	tbtemp[w][h]->SetFillColor(0);
+      }//Cell Live
+      else{
+	s[w][h]=0; 
+	stemp[w][h]=0; 
+	tb[w][h]->SetFillColor(1);
+	tbtemp[w][h]->SetFillColor(1);
+      }//Cell Dead
       tb[w][h]->Draw();
     }
-   }
+  }
+
+  /* //Inicialización Muerta
+  for(Int_t w=0;w<=NBox;w++){
+    for(Int_t h=0;h<=NBox;h++){
+      tb[w][h]= new TBox(w,h,w+1,h+1);
+      tbtemp[w][h]= new TBox(w,h,w+1,h+1);
+      s[w][h]=0; 
+      tb[w][h]->SetFillColor(1);
+      stemp[w][h]=0; 
+      tbtemp[w][h]->SetFillColor(1);
+      tb[w][h]->Draw();
+    }
+  }*/
+
+  /*  //Pl4n34d0r
+  s[1][7]=1;
+  s[2][7]=1;
+  s[2][9]=1;
+  s[3][7]=1;
+  s[3][8]=1;
+  tb[1][7]->SetFillColor(0);
+  tb[2][7]->SetFillColor(0);
+  tb[2][9]->SetFillColor(0);
+  tb[3][7]->SetFillColor(0);
+  tb[3][8]->SetFillColor(0);
+  tb[1][7]->Draw();
+  tb[2][7]->Draw();
+  tb[2][9]->Draw();
+  tb[3][7]->Draw();
+  tb[3][8]->Draw();
+  */
+
+  /* //GVs4n0
+  s[5][5]=1;
+  s[5][6]=1;
+  s[5][4]=1;
+  tb[5][5]->SetFillColor(0);
+  tb[5][6]->SetFillColor(0);
+  tb[5][4]->SetFillColor(0);
+  tb[5][5]->Draw();
+  tb[5][6]->Draw();
+  tb[5][4]->Draw();
+  */
 
   c1->Update();
 }
@@ -136,6 +192,9 @@ void CellularAutomata::Control(){
 
 void CellularAutomata::Reset(){
   time=0;
+  i=0;
+  j=0;
+  CountState=2;
   c1->Clear();
   c1->Update();
   NEPoints->SetState(true);
@@ -146,33 +205,28 @@ void CellularAutomata::Reset(){
 void CellularAutomata::Run(){
   Count->TurnOn();
   if(time==0){
-    cout<<"Run...."<<endl;
     CellularAutomata::Init();
     time++;
   }
   if(i==0){//Límite Izquierdo
     if(j==0){//Esquina Inferior Izquierda
       if(s[0][1]==1 && s[1][1]==1 && s[1][0]==1){
-	s[0][0]=1; 
-	tb[0][0]->SetFillColor(0);
-	tb[0][0]->Draw();
+	stemp[0][0]=1; 
+	tbtemp[0][0]->SetFillColor(0);
       }
       else{
-	s[0][0]=0; 
-	tb[0][0]->SetFillColor(1);
-	tb[0][0]->Draw();
+	stemp[0][0]=0; 
+	tbtemp[0][0]->SetFillColor(1);
       }
     }
     if(j==NBox){//Esquina Superior Izquierda
       if(s[0][NBox-1]==1 && s[1][NBox-1]==1 && s[1][NBox]==1){
-	s[0][NBox]=1; 
-	tb[0][NBox]->SetFillColor(0);
-	tb[0][NBox]->Draw();
+	stemp[0][NBox]=1; 
+	tbtemp[0][NBox]->SetFillColor(0);
       }
       else{
-	s[0][NBox]=0; 
-	tb[0][NBox]->SetFillColor(1);
-	tb[0][NBox]->Draw();
+	stemp[0][NBox]=0; 
+	tbtemp[0][NBox]->SetFillColor(1);
       }
     }
     
@@ -184,14 +238,16 @@ void CellularAutomata::Run(){
       if (s[i+1][j]==1) Lives++;
       if (s[i+1][j+1]==1)Lives++;
       if(s[i][j]==0 && Lives==3){
-	s[i][j]=1; 
-	tb[i][j]->SetFillColor(0);
-	tb[i][j]->Draw();
+	stemp[i][j]=1; 
+	tbtemp[i][j]->SetFillColor(0);
       }
-      if(s[i][j]==1 && Lives!=2 && Lives!=3){
-	s[i][j]=0; 
-	tb[i][j]->SetFillColor(1);
-	tb[i][j]->Draw();
+      if(s[i][j]==1 && (Lives<2 || Lives>3)){
+	stemp[i][j]=0; 
+	tbtemp[i][j]->SetFillColor(1);
+      }
+      if(s[i][j]==1 && (Lives==2 || Lives==3)){
+	stemp[i][j]=1; 
+	tbtemp[i][j]->SetFillColor(0);
       }
     }
   }
@@ -199,26 +255,22 @@ void CellularAutomata::Run(){
   if(i==NBox){//Límite Derecho
     if(j==0){//Esquina Inferior Derecha
       if(s[NBox-1][0]==1 && s[NBox-1][1]==1 && s[NBox][1]==1){
-	s[NBox][0]=1; 
-	tb[NBox][0]->SetFillColor(0);
-	tb[NBox][0]->Draw();
+	stemp[NBox][0]=1; 
+	tbtemp[NBox][0]->SetFillColor(0);
       }
       else{
-	s[NBox][0]=0; 
-	tb[NBox][0]->SetFillColor(1);
-	tb[NBox][0]->Draw();
+	stemp[NBox][0]=0; 
+	tbtemp[NBox][0]->SetFillColor(1);
       }
     }
     if(j==NBox){//Esquina Superior Derecha
       if(s[NBox][NBox-1]==1 && s[NBox-1][NBox-1]==1 && s[NBox-1][NBox]==1){
-	s[NBox][NBox]=1; 
-	tb[NBox][NBox]->SetFillColor(0);
-	tb[NBox][NBox]->Draw();
+	stemp[NBox][NBox]=1; 
+	tbtemp[NBox][NBox]->SetFillColor(0);
       }
       else{
-	s[NBox][NBox]=0; 
-	tb[NBox][NBox]->SetFillColor(1);
-	tb[NBox][NBox]->Draw();
+	stemp[NBox][NBox]=0; 
+	tbtemp[NBox][NBox]->SetFillColor(1);
       }
     }
     
@@ -230,37 +282,41 @@ void CellularAutomata::Run(){
       if (s[i-1][j]==1) Lives++;
       if (s[i-1][j+1]==1)Lives++;
       if(s[i][j]==0 && Lives==3){
-	s[i][j]=1; 
-	tb[i][j]->SetFillColor(0);
-	tb[i][j]->Draw();
+	stemp[i][j]=1; 
+	tbtemp[i][j]->SetFillColor(0);
       }
-      if(s[i][j]==1 && Lives!=2 && Lives!=3){
-	s[i][j]=0; 
-	tb[i][j]->SetFillColor(1);
-	tb[i][j]->Draw();
+      if(s[i][j]==1 && (Lives<2 || Lives>3)){
+	stemp[i][j]=0; 
+	tbtemp[i][j]->SetFillColor(1);
+      }
+      if(s[i][j]==1 && (Lives==2 || Lives==3)){
+	stemp[i][j]=1; 
+	tbtemp[i][j]->SetFillColor(0);
       }
     }
   }
 
-  if(i!=0 && j!=0 && i!=NBox && j!=NBox){//Celulas Internas
+  if(i>0 && j>0 && i<NBox && j<NBox){//Celulas Internas
     Lives=0;
-    if(s[i-1][j]==1) Lives++;
-    if(s[i+1][j]==1) Lives++;
     if(s[i][j-1]==1) Lives++;
     if(s[i][j+1]==1) Lives++;
+    if(s[i-1][j]==1) Lives++;
     if(s[i-1][j-1]==1) Lives++;
     if(s[i-1][j+1]==1) Lives++;
+    if(s[i+1][j]==1) Lives++;
     if(s[i+1][j-1]==1) Lives++;
     if(s[i+1][j+1]==1) Lives++;
     if(s[i][j]==0 && Lives==3){
-      s[i][j]=1; 
-      tb[i][j]->SetFillColor(0);
-      tb[i][j]->Draw();
+      stemp[i][j]=1; 
+      tbtemp[i][j]->SetFillColor(0);
     }
-    if(s[i][j]==1 && Lives!=2 && Lives!=3){
-      s[i][j]=0; 
-      tb[i][j]->SetFillColor(1);
-      tb[i][j]->Draw();
+    if(s[i][j]==1 && (Lives<2 || Lives>3)){
+      stemp[i][j]=0; 
+      tbtemp[i][j]->SetFillColor(1);
+    }
+    if(s[i][j]==1 && (Lives==2 || Lives==3)){
+      stemp[i][j]=1; 
+      tbtemp[i][j]->SetFillColor(0);
     }
   }
   
@@ -273,14 +329,16 @@ void CellularAutomata::Run(){
       if(s[i+1][j+1]==1) Lives++;
       if(s[i+1][j]==1) Lives++;
       if(s[i][j]==0 && Lives==3){
-	s[i][j]=1; 
-	tb[i][j]->SetFillColor(0);
-	tb[i][j]->Draw();
+	stemp[i][j]=1; 
+	tbtemp[i][j]->SetFillColor(0);
       }
-      if(s[i][j]==1 && Lives!=2 && Lives!=3){
-	s[i][j]=0; 
-	tb[i][j]->SetFillColor(1);
-	tb[i][j]->Draw();
+      if(s[i][j]==1 && (Lives<2 || Lives>3)){
+	stemp[i][j]=0; 
+	tbtemp[i][j]->SetFillColor(1);
+      }
+      if(s[i][j]==1 && (Lives==2 || Lives==3)){
+	stemp[i][j]=1; 
+	tbtemp[i][j]->SetFillColor(0);
       }
     }
     if(j==NBox){//Límite Superior
@@ -291,21 +349,43 @@ void CellularAutomata::Run(){
       if(s[i+1][j-1]==1) Lives++;
       if(s[i+1][j]==1) Lives++;
       if(s[i][j]==0 && Lives==3){
-	s[i][j]=1; 
-	tb[i][j]->SetFillColor(0);
-	tb[i][j]->Draw();
+	stemp[i][j]=1; 
+	tbtemp[i][j]->SetFillColor(0);
       }
-      if(s[i][j]==1 && Lives!=2 && Lives!=3){
-	s[i][j]=0; 
-	tb[i][j]->SetFillColor(1);
-	tb[i][j]->Draw();
+      if(s[i][j]==1 && (Lives<2 || Lives>3)){
+	stemp[i][j]=0; 
+	tbtemp[i][j]->SetFillColor(1);
+      }
+      if(s[i][j]==1 && (Lives==2 || Lives==3)){
+	stemp[i][j]=1; 
+	tbtemp[i][j]->SetFillColor(0);
       }
     }
   }
   i=i+1;
   if(i==NBox+1){
-    if(j==NBox){time=time+1; c1->Update(); i=0; j=0;}
-    else{i=0; j=j+1;}
+    if(j==NBox){
+      for(Int_t d=0;d<i;d++){
+	for(Int_t z=0;z<=j;z++){
+	  //	  cout<<s[d][z]<<"|";
+	  s[d][z]=stemp[d][z]; 
+	  tb[d][z]=tbtemp[d][z]; 
+	  tb[d][z]->Draw();
+	  LiveTotal=LiveTotal+s[d][z];
+	}
+	//	cout<<endl;
+      }
+      if(LiveTotal==0){Count->TurnOff(); cout<<"STOP"<<endl;}
+      else{LiveTotal=0;}
+      //      cout<<"\n"<<endl;
+      time=time+1; 
+      i=0;
+      j=0;
+      c1->Update(); 
+    }
+    else{
+      i=0; j=j+1;
+    }
   }
 }
 
