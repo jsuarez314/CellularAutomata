@@ -32,8 +32,11 @@
 #endif
 
 int Application(){
+
   CellularAutomata *App = new CellularAutomata(gClient->GetRoot(),650,500);
+
   return 0;
+
 }
 
 #ifndef __CINT__
